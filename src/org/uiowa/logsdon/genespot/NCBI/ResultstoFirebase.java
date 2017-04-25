@@ -19,9 +19,7 @@ public class ResultstoFirebase {
 	DatabaseReference Genespot;
 
 	public void SendtoGenespot(String jobName, Genome currentGenome, Gene currentGene) throws FileNotFoundException {
-		FileInputStream serviceAccount = new FileInputStream(ResultstoFirebase.class.getClassLoader()
-				.getResource("thegenespot-efb8a-firebase-adminsdk-1phn3-cbe3ab49a4.json").getPath()
-				.replaceAll("%20", " "));
+		FileInputStream serviceAccount = new FileInputStream("thegenespot-efb8a-firebase-adminsdk-1phn3-cbe3ab49a4.json");
 
 		FirebaseOptions options = new FirebaseOptions.Builder()
 				.setCredential(FirebaseCredentials.fromCertificate(serviceAccount))
@@ -34,17 +32,17 @@ public class ResultstoFirebase {
 
 		//JobName
 			//GeneName
-				//Kingdom
-					//subtype
-						//taxID
-							//assembly Number 1
-									//Hits : {{sequence, score}}
-							//assembly Number 2
-									//Hits : {{sequence, score}}
+				//Species Name
+					//Number of Hits  =
+					//assembly =
+					//presence = "lightgrey"
+					//Hit Count = N;
+					//Hit1 = {sequence, max ,score}
+					//HitN =
 
-		DatabaseReference cellref = Genespot.child(jobName).child(currentGene.getName()).child(currentGenome.getKingdom())
-				.child(currentGenome.getSubType()).child(currentGenome.getTaxID())
-				.child(currentGenome.getGenome().replace('.', '_'));
+		DatabaseReference cellref = Genespot.child(jobName).child(currentGene.getName()).child(currentGenome.getGenome());
+
+		cellref.child("presence").setValue("lightgrey");
 
 
 		Hit[] hits = currentGene.getHits();
@@ -59,29 +57,22 @@ public class ResultstoFirebase {
 		int i = 0;
 
 		while (i < hits.length) {
-			cellref.child("Hit" + (i + 1)).child("Accession Number").setValue(
-					hits[i].getAccesionNumber().replace('.', 'v'), new DatabaseReference.CompletionListener() {
-						@Override
-						public void onComplete(DatabaseError arg0, DatabaseReference arg1) {
-							throw arg0.toException();
-						}
-					});
-			cellref.child("Hit" + (i + 1)).child("Hit From").setValue(hits[i].getHitFrom(),
-					new DatabaseReference.CompletionListener() {
-						@Override
-						public void onComplete(DatabaseError arg0, DatabaseReference arg1) {
-							throw arg0.toException();
-						}
-					});
-			cellref.child("Hit" + (i + 1)).child("Hit To").setValue(hits[i].getHitTo(),
-					new DatabaseReference.CompletionListener() {
-						@Override
-						public void onComplete(DatabaseError arg0, DatabaseReference arg1) {
-							throw arg0.toException();
-						}
-					});
 
-			i++;
+			String header = hits[i].getSequenceTitle();
+			String sequence = hits[i].getSequence();
+			String scoreSequence = hits[i].getScoreSequenceString();
+			String max = String.valueOf(currentGene.getQueryCount());
+
+			StringBuilder builder = new StringBuilder();
+			builder.append(header);
+			builder.append("|");
+			builder.append(sequence);
+			builder.append("|");
+			builder.append(scoreSequence);
+			builder.append("|");
+			builder.append(max);
+
+			cellref.child("Hit" + (i + 1)).setValue(builder.toString());
 		}
 	}
 }
